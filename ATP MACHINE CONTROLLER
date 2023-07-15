@@ -1,0 +1,64 @@
+// ATP Machine Controller
+
+module ATP_Controller (
+  input wire clk,
+  input wire reset,
+  input wire startButton,
+  input wire paymentMethod,
+  input wire billAmount,
+  output wire paymentComplete
+);
+
+  // Define states
+  typedef enum logic [2:0] {
+    IDLE,
+    PROCESSING,
+    CONFIRMATION,
+    PAYMENT_SUCCESS,
+    PAYMENT_FAILURE
+  } State;
+
+  // Internal signals
+  reg [2:0] state;
+  reg [31:0] balance;
+
+  always @(posedge clk or posedge reset) begin
+    if (reset) begin
+      state <= IDLE;
+      balance <= 0;
+    end else begin
+      case (state)
+        IDLE:
+          if (startButton) begin
+            state <= PROCESSING;
+          end
+        PROCESSING:
+          if (paymentMethod) begin
+            if (billAmount <= balance) begin
+              state <= CONFIRMATION;
+            end else begin
+              state <= PAYMENT_FAILURE;
+            end
+          end
+        CONFIRMATION:
+          if (paymentMethod) begin
+            if (billAmount <= balance) begin
+              balance <= balance - billAmount;
+              state <= PAYMENT_SUCCESS;
+            end else begin
+              state <= PAYMENT_FAILURE;
+            end
+          end
+        PAYMENT_SUCCESS:
+          state <= IDLE;
+        PAYMENT_FAILURE:
+          state <= IDLE;
+      endcase
+    end
+  end
+
+  // Output assignment
+  assign paymentComplete = (state == PAYMENT_SUCCESS);
+
+endmodule
+This code defines an ATP machine controller module with the following inputs and outputs:
